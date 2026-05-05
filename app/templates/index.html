@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <!-- 新增任務表單 -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">📝 新增任務</h5>
+                <form method="POST" action="{{ url_for('task.add_task') }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">任務內容</label>
+                        <input type="text" class="form-control" id="title" name="title" required placeholder="想做什麼呢？">
+                    </div>
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">優先級</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="High">高 (High)</option>
+                            <option value="Medium" selected>中 (Medium)</option>
+                            <option value="Low">低 (Low)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="due_date" class="form-label">截止日期 (選填)</label>
+                        <input type="date" class="form-control" id="due_date" name="due_date">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">新增</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- 任務列表 -->
+        <h3 class="mb-3">我的任務清單</h3>
+        {% if tasks %}
+            <div class="list-group shadow-sm">
+                {% for task in tasks %}
+                <div class="list-group-item d-flex justify-content-between align-items-center {{ 'bg-light text-muted border-secondary' if task['status'] == 'Completed' else '' }}">
+                    <div class="d-flex align-items-center">
+                        <!-- 切換狀態按鈕 -->
+                        <form method="POST" action="{{ url_for('task.update_status', task_id=task['id']) }}" class="me-3 m-0">
+                            <input type="hidden" name="status" value="{{ 'Pending' if task['status'] == 'Completed' else 'Completed' }}">
+                            <button type="submit" class="btn btn-sm {{ 'btn-success' if task['status'] == 'Completed' else 'btn-outline-secondary' }}" title="切換狀態" style="width: 32px; height: 32px; border-radius: 50%;">
+                                {% if task['status'] == 'Completed' %}✓{% else %}○{% endif %}
+                            </button>
+                        </form>
+                        
+                        <div>
+                            <h5 class="mb-0 {{ 'text-decoration-line-through text-muted' if task['status'] == 'Completed' else '' }}">
+                                {{ task['title'] }}
+                            </h5>
+                            <small class="text-muted">
+                                <span class="badge {{ 'bg-danger' if task['priority'] == 'High' else 'bg-warning text-dark' if task['priority'] == 'Medium' else 'bg-info text-dark' }}">
+                                    {{ task['priority'] }}
+                                </span>
+                                {% if task['due_date'] %} | 🕒 截止: {{ task['due_date'] }}{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <!-- 編輯按鈕 (開啟 Modal) -->
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal{{ task['id'] }}">
+                            編輯
+                        </button>
+                        
+                        <!-- 刪除按鈕 -->
+                        <form method="POST" action="{{ url_for('task.delete_task', task_id=task['id']) }}" class="d-inline m-0" onsubmit="return confirm('確定要刪除這筆任務嗎？');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">刪除</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 編輯任務用的 Modal -->
+                <div class="modal fade" id="editModal{{ task['id'] }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('task.edit_task', task_id=task['id']) }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">編輯任務</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">任務內容</label>
+                                        <input type="text" class="form-control" name="title" value="{{ task['title'] }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">優先級</label>
+                                        <select class="form-select" name="priority">
+                                            <option value="High" {% if task['priority'] == 'High' %}selected{% endif %}>高 (High)</option>
+                                            <option value="Medium" {% if task['priority'] == 'Medium' %}selected{% endif %}>中 (Medium)</option>
+                                            <option value="Low" {% if task['priority'] == 'Low' %}selected{% endif %}>低 (Low)</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">截止日期</label>
+                                        <input type="date" class="form-control" name="due_date" value="{{ task['due_date'] if task['due_date'] else '' }}">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                    <button type="submit" class="btn btn-primary">儲存變更</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center shadow-sm">
+                目前沒有任何任務，趕快在左邊新增一個吧！🚀
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
